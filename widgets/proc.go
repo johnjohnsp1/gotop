@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"fmt"
 	"os/exec"
 	"sort"
 	"strconv"
@@ -39,7 +40,9 @@ type Proc struct {
 }
 
 func NewProc(keyPressed chan bool) *Proc {
+	fmt.Println(1)
 	cpuCount, _ := psCPU.Counts(false)
+	fmt.Println(2)
 	self := &Proc{
 		Table:      ui.NewTable(),
 		interval:   time.Second,
@@ -51,13 +54,16 @@ func NewProc(keyPressed chan bool) *Proc {
 	self.ColResizer = self.ColResize
 	self.Label = "Process List"
 	self.ColWidths = []int{5, 10, 4, 4}
+	fmt.Println(3)
 
 	self.UniqueCol = 0
 	if self.group {
 		self.UniqueCol = 1
 	}
+	fmt.Println(4)
 
 	self.keyBinds()
+	fmt.Println(5)
 
 	self.update()
 
@@ -72,7 +78,9 @@ func NewProc(keyPressed chan bool) *Proc {
 }
 
 func (self *Proc) update() {
+	fmt.Println(6)
 	psProcesses, _ := psProc.Processes()
+	fmt.Println(7)
 	processes := make([]Process, len(psProcesses))
 	wg.Add(len(psProcesses))
 	for i, psProcess := range psProcesses {
@@ -93,6 +101,7 @@ func (self *Proc) update() {
 		}(i, psProcess)
 	}
 	wg.Wait()
+	fmt.Println(8)
 	self.ungroupedProcs = processes
 	self.groupedProcs = Group(processes)
 
@@ -102,6 +111,7 @@ func (self *Proc) update() {
 // Sort sorts either the grouped or ungrouped []Process based on the sortMethod.
 // Called with every update, when the sort method is changed, and when processes are grouped and ungrouped.
 func (self *Proc) Sort() {
+	fmt.Println(12)
 	self.Header = []string{"Count", "Command", "CPU%", "Mem%"}
 
 	if !self.group {
@@ -113,6 +123,7 @@ func (self *Proc) Sort() {
 		processes = &self.groupedProcs
 	}
 
+	fmt.Println(13)
 	switch self.sortMethod {
 	case "c":
 		sort.Sort(sort.Reverse(ProcessByCPU(*processes)))
@@ -128,6 +139,7 @@ func (self *Proc) Sort() {
 		sort.Sort(sort.Reverse(ProcessByMem(*processes)))
 		self.Header[3] += DOWN
 	}
+	fmt.Println(14)
 
 	self.Rows = FieldsToStrings(*processes)
 }
@@ -245,6 +257,7 @@ func (self *Proc) keyBinds() {
 // The first field changes from PID to count.
 // CPU and Mem are added together for each Process.
 func Group(P []Process) []Process {
+	fmt.Println(9)
 	groupedP := make(map[string]Process)
 	for _, process := range P {
 		val, ok := groupedP[process.Command]
@@ -265,6 +278,8 @@ func Group(P []Process) []Process {
 		}
 	}
 
+	fmt.Println(10)
+
 	groupList := make([]Process, len(groupedP))
 	var i int
 	for _, val := range groupedP {
@@ -272,11 +287,14 @@ func Group(P []Process) []Process {
 		i++
 	}
 
+	fmt.Println(11)
+
 	return groupList
 }
 
 // FieldsToStrings converts a []Process to a [][]string
 func FieldsToStrings(P []Process) [][]string {
+	fmt.Println(15)
 	strings := make([][]string, len(P))
 	for i, p := range P {
 		strings[i] = make([]string, 4)
@@ -285,6 +303,7 @@ func FieldsToStrings(P []Process) [][]string {
 		strings[i][2] = strconv.FormatFloat(p.CPU, 'f', 1, 64)
 		strings[i][3] = strconv.FormatFloat(float64(p.Mem), 'f', 1, 32)
 	}
+	fmt.Println(16)
 	return strings
 }
 
