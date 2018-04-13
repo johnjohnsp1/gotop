@@ -4,12 +4,15 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	ui "github.com/cjbassi/termui"
 	psCPU "github.com/shirou/gopsutil/cpu"
 	psProc "github.com/shirou/gopsutil/process"
 )
+
+var wg sync.WaitGroup
 
 const (
 	UP   = "▲"
@@ -71,19 +74,25 @@ func NewProc(keyPressed chan bool) *Proc {
 func (self *Proc) update() {
 	psProcesses, _ := psProc.Processes()
 	processes := make([]Process, len(psProcesses))
+	wg.Add(len(psProcesses))
 	for i, psProcess := range psProcesses {
-		pid := psProcess.Pid
-		command, _ := psProcess.Name()
-		cpu, _ := psProcess.CPUPercent()
-		mem, _ := psProcess.MemoryPercent()
+		go func(i int, psProcess *psProc.Process) {
+			defer wg.Done()
 
-		processes[i] = Process{
-			pid,
-			command,
-			cpu / float64(self.cpuCount),
-			mem,
-		}
+			pid := psProcess.Pid
+			command, _ := psProcess.Name()
+			cpu, _ := psProcess.CPUPercent()
+			mem, _ := psProcess.MemoryPercent()
+
+			processes[i] = Process{
+				pid,
+				command,
+				cpu / float64(self.cpuCount),
+				mem,
+			}
+		}(i, psProcess)
 	}
+	wg.Wait()
 	self.ungroupedProcs = processes
 	self.groupedProcs = Group(processes)
 
