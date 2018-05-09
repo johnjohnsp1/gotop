@@ -10,6 +10,8 @@ type Gauge struct {
 	Percent     int
 	GaugeColor  Color
 	Description string
+	Read        string
+	Write       string
 }
 
 // NewGauge return a new gauge with current theme.
@@ -46,6 +48,9 @@ func (self *Gauge) Buffer() *Buffer {
 		}
 		buf.SetCell(1+x+i, y, Cell{char, fg, bg})
 	}
+
+	buf.SetString(1, 1, MaxString(self.Read, self.X), Color(50), ColorDefault)
+	buf.SetString(1, 2, MaxString(self.Write, self.X), Color(50), ColorDefault)
 
 	return buf
 }
